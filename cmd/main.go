@@ -3,10 +3,9 @@ package main
 import (
 	"fmt"
 	"my_own_shortener/internal/config"
-	"my_own_shortener/internal/http-server/handlers/redirect"
-
+	redirecth "my_own_shortener/internal/http-server/handlers/redirect"
 	deleteh "my_own_shortener/internal/http-server/handlers/url/delete"
-	"my_own_shortener/internal/http-server/handlers/url/save"
+	saveh "my_own_shortener/internal/http-server/handlers/url/save"
 	"my_own_shortener/internal/logger"
 
 	"my_own_shortener/internal/storage/postgresql"
@@ -26,8 +25,8 @@ func main() {
 		fmt.Printf("failed to init storage: %s", err)
 		return
 	}
-	redirectHandler := redirect.NewRedirectHandler(log, db)
-	saveHandler := save.NewSaveHandler(log, db)
+	redirectHandler := redirecth.NewRedirectHandler(log, db)
+	saveHandler := saveh.NewSaveHandler(log, db)
 	deleteHandler := deleteh.NewDeleteHandler(log, db)
 	r := chi.NewRouter()
 	r.Method("GET", "/{alias}", redirectHandler)
