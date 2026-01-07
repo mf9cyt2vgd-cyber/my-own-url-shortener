@@ -1,0 +1,19 @@
+# config.example.yaml
+# Скопируйте как config.yaml и настройте под ваше окружение
+
+user:
+  login: "admin"
+  password: "admin123"
+
+http_server:
+  address: "localhost:8080"
+  idle_timeout: 60s
+  timeout: 4s
+
+postgresql:
+  host: "localhost"
+  port: 5432
+  user: "your_username"
+  password: "your_password"
+  dbname: "your_database"
+  sslmode: "disable"
