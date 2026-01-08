@@ -48,7 +48,8 @@ func (s Storage) Save(urlToSave, alias string) error {
 	const op = "storage.postgresql.New"
 
 	_, err := s.db.Exec(
-		"insert into url(url,alias) values ($1,$2)",
+		`INSERT INTO url(url, alias) VALUES ($1, $2)
+     ON CONFLICT (alias) DO UPDATE SET url = excluded.url`,
 		urlToSave, alias,
 	)
 	if pqErr, ok := err.(*pq.Error); ok {
@@ -64,7 +65,7 @@ func (s Storage) Save(urlToSave, alias string) error {
 func (s Storage) Get(alias string) (string, error) {
 	const op = "storage.postgresql.Get"
 	urlToFind := ""
-	err := s.db.QueryRow("select url from url where alias = $1", alias).Scan(&urlToFind)
+	err := s.db.QueryRow(`select url from url where alias = $1`, alias).Scan(&urlToFind)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", fmt.Errorf("no rows in result by alias %s", alias)
 	}
@@ -76,7 +77,7 @@ func (s Storage) Get(alias string) (string, error) {
 }
 func (s Storage) Delete(alias string) error {
 	const op = "storage.postgresql.Delete"
-	_, err := s.db.Exec("delete from url where alias = $1", alias)
+	_, err := s.db.Exec(`delete from url where alias = $1`, alias)
 	if err != nil {
 		return fmt.Errorf("%s,%w", op, err)
 	}
