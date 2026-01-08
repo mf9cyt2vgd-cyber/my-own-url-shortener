@@ -6,6 +6,7 @@ import (
 	redirecth "my_own_shortener/internal/http-server/handlers/redirect"
 	deleteh "my_own_shortener/internal/http-server/handlers/url/delete"
 	saveh "my_own_shortener/internal/http-server/handlers/url/save"
+	updateh "my_own_shortener/internal/http-server/handlers/url/update"
 	"my_own_shortener/internal/logger"
 
 	"my_own_shortener/internal/storage/postgresql"
@@ -29,9 +30,11 @@ func main() {
 	redirectHandler := redirecth.NewRedirectHandler(log, db)
 	saveHandler := saveh.NewSaveHandler(log, db)
 	deleteHandler := deleteh.NewDeleteHandler(log, db)
+	updateHandler := updateh.NewUpdateHandler(log, db)
 	r := chi.NewRouter()
 	r.Method("GET", "/{alias}", redirectHandler)
 	r.Route("/url", func(r chi.Router) {
+		r.Patch("/", updateHandler)
 		r.Post("/", saveHandler)
 		r.Delete("/", deleteHandler)
 	})

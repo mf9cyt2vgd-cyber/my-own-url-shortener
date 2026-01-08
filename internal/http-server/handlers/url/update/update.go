@@ -1,31 +1,25 @@
-package save
+package update
 
 import (
 	"encoding/json"
+	url_validator "my_own_shortener/internal/http-server/url-validator"
 	"net/http"
 	"time"
-
-	"my_own_shortener/internal/random"
-
-	"my_own_shortener/internal/http-server/url-validator"
 
 	"github.com/sirupsen/logrus"
 )
 
 type Request struct {
-	URL   string `json:"url"`
-	Alias string `json:"alias"`
+	NewURL string `json:"new_url"`
+	Alias  string `json:"alias"`
+}
+type UrlUpdater interface {
+	Update(alias string, newURL string) error
 }
 
-const aliasLength = 6
-
-type UrlSaver interface {
-	Save(urlToSave, alias string) error
-}
-
-func NewSaveHandler(logger *logrus.Logger, saver UrlSaver) http.HandlerFunc {
+func NewUpdateHandler(logger *logrus.Logger, saver UrlUpdater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "http-server.handlers.save"
+		const op = "http-server.handlers.update"
 		var req Request
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
@@ -33,16 +27,13 @@ func NewSaveHandler(logger *logrus.Logger, saver UrlSaver) http.HandlerFunc {
 			logger.Errorf("%s:\n\terror decoding json: %s", op, err)
 			return
 		}
-		if req.Alias == "" {
-			req.Alias = random.NewRandomString(aliasLength)
-		}
-		if !url_validator.ValidateUrl(req.URL, 2*time.Second) {
+		if !url_validator.ValidateUrl(req.NewURL, 2*time.Second) {
 			w.WriteHeader(http.StatusBadRequest)
 			err = json.NewEncoder(w).Encode(map[string]string{"result": "invalid url"})
 			logger.Errorf("%s:\n\terror validating url", op)
 			return
 		}
-		err = saver.Save(req.URL, req.Alias)
+		err = saver.Update(req.NewURL, req.Alias)
 		if err != nil {
 			logger.Errorf("%s:\n\terror saving url: %s", op, err)
 			return
@@ -52,6 +43,6 @@ func NewSaveHandler(logger *logrus.Logger, saver UrlSaver) http.HandlerFunc {
 			logger.Errorf("%s:\n\terror encoding json: %s", op, err)
 			return
 		}
-		logger.Infof("%s:\n\tsave url %s by alias %s successful", op, req.URL, req.Alias)
+		logger.Infof("%s:\n\tupdate url %s by alias %s successful", op, req.NewURL, req.Alias)
 	}
 }

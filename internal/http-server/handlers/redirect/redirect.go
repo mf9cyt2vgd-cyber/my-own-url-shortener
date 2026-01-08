@@ -17,9 +17,9 @@ func NewRedirectHandler(logger *logrus.Logger, getter UrlGetter) http.HandlerFun
 		alias := chi.URLParam(r, "alias")
 		urlToGet, err := getter.Get(alias)
 		if err != nil {
-			logger.Errorf("%s:error geting url by alias %s: %w", op, alias, err)
+			logger.Errorf("%s:\n\terror geting url by alias %s: %w", op, alias, err)
 		}
 		http.Redirect(w, r, urlToGet, http.StatusFound)
-		logger.Info("redirection complete")
+		logger.Infof("%s:\n\tredirect to %s by alias %s complete", op, urlToGet, alias)
 	}
 }

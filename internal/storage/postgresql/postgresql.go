@@ -78,7 +78,18 @@ func (s Storage) Delete(alias string) error {
 	}
 	return nil
 }
+func (s *Storage) Update(alias string, newURL string) error {
+	const op = "storage.postgresql.Update"
 
+	_, err := s.db.Exec(
+		`UPDATE url SET url = $1 WHERE alias = $2`, newURL, alias)
+
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
 func (s *Storage) Close() error {
 	const op = "storage.postgresql.Close"
 

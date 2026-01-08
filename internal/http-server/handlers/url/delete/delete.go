@@ -22,16 +22,16 @@ func NewDeleteHandler(logger *logrus.Logger, deleter UrlDeleter) http.HandlerFun
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			logger.Errorf("error decoding json: %s", err)
+			logger.Errorf("%s:\n\terror decoding json: %s", op, err)
 			return
 		}
 		err = deleter.Delete(req.Alias)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			logger.Errorf("error deleting alias %s", req.Alias)
+			logger.Errorf("%s:\n\terror deleting alias %s", op, req.Alias)
 			return
 		}
 		err = json.NewEncoder(w).Encode(map[string]string{"result": "successful delete"})
-		logger.Info("delete successful")
+		logger.Infof("%s:\n\tdelete by alias %s successful", op, req.Alias)
 	}
 }
