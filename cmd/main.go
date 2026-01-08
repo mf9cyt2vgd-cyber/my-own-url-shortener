@@ -21,6 +21,7 @@ func main() {
 		cfg.Postgresql.Host, cfg.Postgresql.Port, cfg.Postgresql.User,
 		cfg.Postgresql.Dbname, cfg.Postgresql.Sslmode)
 	db, err := postgresql.New(connStr)
+	defer db.Close()
 	if err != nil {
 		fmt.Printf("failed to init storage: %s", err)
 		return

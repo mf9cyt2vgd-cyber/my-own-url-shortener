@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 )
 
@@ -52,11 +51,7 @@ func (s Storage) Save(urlToSave, alias string) error {
      ON CONFLICT (alias) DO UPDATE SET url = excluded.url`,
 		urlToSave, alias,
 	)
-	if pqErr, ok := err.(*pq.Error); ok {
-		if pqErr.Code == "23505" {
-			return fmt.Errorf("alias %s already exists", alias)
-		}
-	}
+
 	if err != nil {
 		return fmt.Errorf("%s:%w", op, err)
 	}
@@ -81,5 +76,21 @@ func (s Storage) Delete(alias string) error {
 	if err != nil {
 		return fmt.Errorf("%s,%w", op, err)
 	}
+	return nil
+}
+
+func (s *Storage) Close() error {
+	const op = "storage.postgresql.Close"
+
+	if s.db == nil {
+		return nil
+	}
+
+	err := s.db.Close()
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	s.db = nil
 	return nil
 }
