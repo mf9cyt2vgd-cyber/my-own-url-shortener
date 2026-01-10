@@ -1,6 +1,7 @@
 package update
 
 import (
+	"context"
 	"encoding/json"
 	url_validator "my_own_shortener/internal/http-server/url-validator"
 	"net/http"
@@ -14,7 +15,7 @@ type Request struct {
 	Alias  string `json:"alias"`
 }
 type UrlUpdater interface {
-	Update(alias string, newURL string) error
+	Update(ctx context.Context, alias string, newURL string) error
 }
 
 func NewUpdateHandler(logger *logrus.Logger, updater UrlUpdater) http.HandlerFunc {
@@ -33,7 +34,7 @@ func NewUpdateHandler(logger *logrus.Logger, updater UrlUpdater) http.HandlerFun
 			logger.Errorf("%s:\n\terror validating url", op)
 			return
 		}
-		err = updater.Update(req.Alias, req.NewURL)
+		err = updater.Update(r.Context(), req.Alias, req.NewURL)
 		if err != nil {
 			logger.Errorf("%s:\n\terror saving url: %s", op, err)
 			return

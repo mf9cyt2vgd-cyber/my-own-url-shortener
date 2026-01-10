@@ -1,6 +1,7 @@
 package save
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -20,7 +21,7 @@ type Request struct {
 const aliasLength = 6
 
 type UrlSaver interface {
-	Save(urlToSave, alias string) error
+	Save(ctx context.Context, urlToSave, alias string) error
 }
 
 func NewSaveHandler(logger *logrus.Logger, saver UrlSaver) http.HandlerFunc {
@@ -42,7 +43,7 @@ func NewSaveHandler(logger *logrus.Logger, saver UrlSaver) http.HandlerFunc {
 			logger.Errorf("%s:\n\terror validating url", op)
 			return
 		}
-		err = saver.Save(req.URL, req.Alias)
+		err = saver.Save(r.Context(), req.URL, req.Alias)
 		if err != nil {
 			logger.Errorf("%s:\n\terror saving url: %s", op, err)
 			return

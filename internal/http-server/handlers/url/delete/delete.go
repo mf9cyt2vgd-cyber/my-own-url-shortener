@@ -1,6 +1,7 @@
 package save
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -12,7 +13,7 @@ type Request struct {
 }
 
 type UrlDeleter interface {
-	Delete(alias string) error
+	Delete(ctx context.Context, alias string) error
 }
 
 func NewDeleteHandler(logger *logrus.Logger, deleter UrlDeleter) http.HandlerFunc {
@@ -25,7 +26,7 @@ func NewDeleteHandler(logger *logrus.Logger, deleter UrlDeleter) http.HandlerFun
 			logger.Errorf("%s:\n\terror decoding json: %s", op, err)
 			return
 		}
-		err = deleter.Delete(req.Alias)
+		err = deleter.Delete(r.Context(), req.Alias)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			logger.Errorf("%s:\n\terror deleting alias %s", op, req.Alias)
