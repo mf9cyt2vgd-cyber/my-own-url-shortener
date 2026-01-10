@@ -17,7 +17,7 @@ type UrlUpdater interface {
 	Update(alias string, newURL string) error
 }
 
-func NewUpdateHandler(logger *logrus.Logger, saver UrlUpdater) http.HandlerFunc {
+func NewUpdateHandler(logger *logrus.Logger, updater UrlUpdater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "http-server.handlers.update"
 		var req Request
@@ -33,7 +33,7 @@ func NewUpdateHandler(logger *logrus.Logger, saver UrlUpdater) http.HandlerFunc 
 			logger.Errorf("%s:\n\terror validating url", op)
 			return
 		}
-		err = saver.Update(req.NewURL, req.Alias)
+		err = updater.Update(req.Alias, req.NewURL)
 		if err != nil {
 			logger.Errorf("%s:\n\terror saving url: %s", op, err)
 			return

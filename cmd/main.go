@@ -27,16 +27,12 @@ func main() {
 		fmt.Printf("failed to init storage: %s", err)
 		return
 	}
-	redirectHandler := redirecth.NewRedirectHandler(log, db)
-	saveHandler := saveh.NewSaveHandler(log, db)
-	deleteHandler := deleteh.NewDeleteHandler(log, db)
-	updateHandler := updateh.NewUpdateHandler(log, db)
 	r := chi.NewRouter()
-	r.Method("GET", "/{alias}", redirectHandler)
+	r.Method("GET", "/{alias}", redirecth.NewRedirectHandler(log, db))
 	r.Route("/url", func(r chi.Router) {
-		r.Patch("/", updateHandler)
-		r.Post("/", saveHandler)
-		r.Delete("/", deleteHandler)
+		r.Patch("/", updateh.NewUpdateHandler(log, db))
+		r.Post("/", saveh.NewSaveHandler(log, db))
+		r.Delete("/", deleteh.NewDeleteHandler(log, db))
 	})
 	log.Info("Starting server...")
 	err = http.ListenAndServe("localhost:8080", r)
