@@ -20,6 +20,7 @@ type Request struct {
 
 const aliasLength = 6
 
+//go:generate mockery --name=UrlSaver --output=mocks --outpkg=mocks --case=underscore
 type UrlSaver interface {
 	Save(ctx context.Context, urlToSave, alias string) error
 }
@@ -46,6 +47,7 @@ func NewSaveHandler(logger *logrus.Logger, saver UrlSaver) http.HandlerFunc {
 		err = saver.Save(r.Context(), req.URL, req.Alias)
 		if err != nil {
 			logger.Errorf("%s:\n\terror saving url: %s", op, err)
+			err = json.NewEncoder(w).Encode(map[string]string{"result": "error saving url"})
 			return
 		}
 		err = json.NewEncoder(w).Encode(map[string]string{"result": "successful save"})

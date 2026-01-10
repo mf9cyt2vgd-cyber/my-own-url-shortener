@@ -14,7 +14,7 @@ type Storage struct {
 }
 
 func New(connStr string) (*Storage, error) {
-	const op = "storage.postgresql.new"
+	const op = "storage.postgresql.New"
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -45,18 +45,17 @@ func New(connStr string) (*Storage, error) {
 	return &Storage{db: db}, nil
 }
 func (s *Storage) Save(ctx context.Context, urlToSave, alias string) error {
-	const op = "storage.postgresql.New"
-
+	const op = "storage.postgresql.Save"
 	_, err := s.db.ExecContext(
-		ctx, `INSERT INTO url(url, alias) VALUES ($1, $2)`,
+		ctx,
+		`INSERT INTO url(url, alias) VALUES ($1, $2)`,
 		urlToSave, alias,
 	)
-
 	if err != nil {
 		if ctx.Err() != nil {
-			return fmt.Errorf("update canceled: %w", ctx.Err())
+			return fmt.Errorf("%s: operation canceled: %w", op, ctx.Err())
 		}
-		return fmt.Errorf("%s:%w", op, err)
+		return fmt.Errorf("%s: %w", op, err)
 	}
 	return nil
 }
@@ -64,44 +63,65 @@ func (s *Storage) Get(ctx context.Context, alias string) (string, error) {
 	const op = "storage.postgresql.Get"
 	urlToFind := ""
 	err := s.db.QueryRowContext(ctx, `select url from url where alias = $1`, alias).Scan(&urlToFind)
-	if errors.Is(err, sql.ErrNoRows) {
-		return "", fmt.Errorf("no rows in result by alias %s", alias)
-	}
 	if err != nil {
-		if ctx.Err() != nil {
-			return "", fmt.Errorf("update canceled: %w", ctx.Err())
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			return "", fmt.Errorf("%s: operation canceled: %w", op, err)
 		}
-		return "", fmt.Errorf("%s,%w", op, err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", fmt.Errorf("no rows in result by alias %s", alias)
+		}
+		if ctx.Err() != nil {
+			return "", fmt.Errorf("%s: context error: %w", op, ctx.Err())
+		}
+		return "", fmt.Errorf("%s: %w", op, err)
 	}
-
 	return urlToFind, nil
 }
 func (s *Storage) Delete(ctx context.Context, alias string) error {
 	const op = "storage.postgresql.Delete"
-	_, err := s.db.ExecContext(ctx, `delete from url where alias = $1`, alias)
+
+	result, err := s.db.ExecContext(
+		ctx,
+		`DELETE FROM url WHERE alias = $1`,
+		alias,
+	)
 	if err != nil {
-		if ctx.Err() != nil {
-			return fmt.Errorf("update canceled: %w", ctx.Err())
-		}
-		return fmt.Errorf("%s,%w", op, err)
+		return fmt.Errorf("%s: %w", op, err)
 	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return nil
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("%s: alias not found", op)
+	}
+
 	return nil
 }
 func (s *Storage) Update(ctx context.Context, alias string, newURL string) error {
 	const op = "storage.postgresql.Update"
+
 	result, err := s.db.ExecContext(
-		ctx, `UPDATE url SET url = $1 WHERE alias = $2`, newURL, alias)
+		ctx,
+		`UPDATE url SET url = $1 WHERE alias = $2`,
+		newURL, alias,
+	)
+
 	if err != nil {
+		// Ошибка при выполнении UPDATE (включая отмену контекста)
 		return fmt.Errorf("%s: %w", op, err)
 	}
-	rows, err := result.RowsAffected()
+
+	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		if ctx.Err() != nil {
-			return fmt.Errorf("update canceled: %w", ctx.Err())
-		}
-		return fmt.Errorf("%s: %w", op, err)
-	} else if rows == 0 {
-		return fmt.Errorf("%s: 0 rows affected", op)
+		// Ошибка при получении RowsAffected (редко, но возможно)
+		// Контекст здесь уже не важен - UPDATE уже выполнен
+		return fmt.Errorf("%s: failed to get rows affected: %w", op, err)
+	}
+
+	if rowsAffected == 0 {
+		// Ни одна строка не обновлена - вероятно, alias не найден
+		return fmt.Errorf("%s: 0 rows affected: %w", op, err)
 	}
 
 	return nil
