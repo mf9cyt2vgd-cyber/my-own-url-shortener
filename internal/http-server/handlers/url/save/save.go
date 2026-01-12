@@ -3,7 +3,6 @@ package save
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -33,7 +32,6 @@ func NewSaveHandler(logger *logrus.Logger, saver UrlSaver) http.HandlerFunc {
 		defer cancel()
 		var req Request
 		err := json.NewDecoder(r.Body).Decode(&req)
-		fmt.Println(r.Header)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			logger.Errorf("%s:\n\terror decoding json: %s", op, err)
