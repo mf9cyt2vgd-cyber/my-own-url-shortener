@@ -3,6 +3,7 @@ package save
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -28,8 +29,11 @@ type UrlSaver interface {
 func NewSaveHandler(logger *logrus.Logger, saver UrlSaver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "http-server.handlers.save"
+		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+		defer cancel()
 		var req Request
 		err := json.NewDecoder(r.Body).Decode(&req)
+		fmt.Println(r.Header)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			logger.Errorf("%s:\n\terror decoding json: %s", op, err)
@@ -44,7 +48,7 @@ func NewSaveHandler(logger *logrus.Logger, saver UrlSaver) http.HandlerFunc {
 			logger.Errorf("%s:\n\terror validating url", op)
 			return
 		}
-		err = saver.Save(r.Context(), req.URL, req.Alias)
+		err = saver.Save(ctx, req.URL, req.Alias)
 		if err != nil {
 			logger.Errorf("%s:\n\terror saving url: %s", op, err)
 			err = json.NewEncoder(w).Encode(map[string]string{"result": "error saving url"})

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -19,6 +20,8 @@ type UrlDeleter interface {
 func NewDeleteHandler(logger *logrus.Logger, deleter UrlDeleter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "http-server.handlers.save"
+		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+		defer cancel()
 		var req Request
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
@@ -26,7 +29,7 @@ func NewDeleteHandler(logger *logrus.Logger, deleter UrlDeleter) http.HandlerFun
 			logger.Errorf("%s:\n\terror decoding json: %s", op, err)
 			return
 		}
-		err = deleter.Delete(r.Context(), req.Alias)
+		err = deleter.Delete(ctx, req.Alias)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			logger.Errorf("%s:\n\terror deleting alias %s", op, req.Alias)

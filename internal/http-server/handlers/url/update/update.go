@@ -21,6 +21,8 @@ type UrlUpdater interface {
 func NewUpdateHandler(logger *logrus.Logger, updater UrlUpdater) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "http-server.handlers.update"
+		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+		defer cancel()
 		var req Request
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
@@ -34,7 +36,7 @@ func NewUpdateHandler(logger *logrus.Logger, updater UrlUpdater) http.HandlerFun
 			logger.Errorf("%s:\n\terror validating url", op)
 			return
 		}
-		err = updater.Update(r.Context(), req.Alias, req.NewURL)
+		err = updater.Update(ctx, req.Alias, req.NewURL)
 		if err != nil {
 			logger.Errorf("%s:\n\terror saving url: %s", op, err)
 			return
