@@ -28,6 +28,7 @@ func main() {
 		fmt.Printf("failed to init storage: %s", err)
 		return
 	}
+
 	r := chi.NewRouter()
 	r.Method("GET", "/{alias}", redirecth.NewRedirectHandler(log, db))
 	r.Route("/url", func(r chi.Router) {
@@ -36,12 +37,12 @@ func main() {
 		r.Delete("/", deleteh.NewDeleteHandler(log, db))
 	})
 	server := &http.Server{
-		Addr:              "localhost:8080", // или cfg.HTTP.Address если есть
+		Addr:              "localhost:8080",
 		Handler:           r,
-		ReadTimeout:       cfg.HttpServer.Timeout,     // Макс время на чтение запроса
-		ReadHeaderTimeout: 2 * time.Second,            // Макс время на чтение заголовков
-		WriteTimeout:      10 * time.Second,           // Макс время на запись ответа
-		IdleTimeout:       cfg.HttpServer.IdleTimeout, // Макс время простоя
+		ReadTimeout:       cfg.HttpServer.Timeout,
+		ReadHeaderTimeout: 2 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       cfg.HttpServer.IdleTimeout,
 	}
 
 	log.Info("Starting server...")

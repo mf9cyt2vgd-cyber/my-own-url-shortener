@@ -5,7 +5,6 @@ import "github.com/sirupsen/logrus"
 func New() *logrus.Logger {
 	log := logrus.New()
 
-	// Включаем цвета (по умолчанию уже включены для TTY)
 	log.SetFormatter(&logrus.TextFormatter{
 		ForceColors:     true,
 		FullTimestamp:   true,
